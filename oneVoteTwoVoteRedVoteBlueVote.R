@@ -3,7 +3,13 @@
 #prior to being added to Github with and MIT licence, this had contributions from 
 # David Hood
 # Jonathan Marshall
- 
+
+#will need rdirichlet so making sure the gtools library is in place
+if (!(require(gtools))) {
+    install.packages("gtools")
+    require(gtools)
+}
+
 # useful things to do:
 # 1. Simulate electorates given some assumptions
  
