@@ -43,7 +43,7 @@ allocate_seats <- function(votes, electorates) {
  
   # uses Sainte Laguë to allocate seats in an election, assuming
   # that each party gets at least electorates
-  total_seats <- 125
+  total_seats <- 120
  
   # now determine seats, given 125 available...
  
