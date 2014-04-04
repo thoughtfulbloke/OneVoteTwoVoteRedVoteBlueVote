@@ -18,25 +18,31 @@ side <- c("n", "l", "l", "w", "n", "n", "n", "n", "l", "o")
  
 # likely electorates
 electorates <- c(1, 1, 0, 0, 0, 1, 1, 1, 0, 0);
- 
-simulate_election <- function() {
-  # we want to estimate the vector P of probabilities within a bayesian framework
-  # based on one (or more) polls, and then generate the posterior distribution for
-  # P and use this to forward-simulate for potential outcomes
- 
-  # Given P, the poll is multinomial(size, P)
-  # Thus, if we put a dirichlet prior on P, the posterior is also dirichlet
-  # with parameter P + poll_results
- 
-  poll <- c(.47, .31, .11, .07, .023, 0.007, 0.003, 0.001, 0.000, 0.004)
-  num_people <- round(poll * 767) # the best we can do as we don't know the weighting
-  prior <- rep(1, length(num_people))
- 
-  # number of votes in the simulated election
-  total_votes <- 2000000
- 
-  prop <- rdirichlet(1, num_people + prior)
-  return(round(total_votes * prop))
+
+# a poll result - should use the same number of parties as above
+colmar_brunton_party_vote <- c(.47, .31, .11, .07, .023, 0.007, 0.003, 0.001, 0.000, 0.004)
+colmar_brunton_num_polled <- 767
+
+#
+# election_from_poll(poll, num_polled)
+#
+# simulates an election given a single poll.
+#
+# poll        the proportions for each party.
+# num_polled  the number of respondents on the polls (excluding "don't know")
+# turnout     the total number of votes to simulate in the election, defaults to 2000000.
+#
+election_from_poll <- function(poll, num_polled, turnout = 2000000) {
+
+  # if P is the true proportions, then the poll is multinomial(num_polled, P)
+  # if we assume a Dirichlet(alpha) prior, the posterior is also dirichlet
+  # due to conjugacy, with paramater alpha + votes_in_poll.
+
+  votes_in_poll <- round(poll * num_polled) # the best we can do as we don't know the weighting
+  prior <- rep(1, length(votes_in_poll))    # equivalent to adding a vote for each party
+
+  prop <- rdirichlet(1, votes_in_poll + prior)
+  return(round(turnout * prop))
 }
  
 allocate_seats <- function(votes, electorates) {
@@ -82,16 +88,14 @@ decide_winner <- function(seats) {
   } else { victory <- "nzf_decides"}
   return(victory)
 }
- 
-elect <- function(support) {
-  votes <- simulate_election()
-  seats <- allocate_seats(votes, electorates)
-  return(decide_winner(seats))
-}
- 
+
 many_elections <- 1000
 outcomes <- rep("", many_elections)
 for (i in 1:many_elections)
-  outcomes[i] <- elect()
+{
+  votes <- election_from_poll(colmar_brunton_party_vote, colmar_brunton_num_polled)
+  seats <- allocate_seats(votes, electorates)
+  outcomes[i] <- decide_winner(seats)
+}
 print("Results for many elections")
 print(prop.table(table(outcomes)))
