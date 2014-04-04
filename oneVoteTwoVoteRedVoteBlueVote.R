@@ -58,12 +58,9 @@ allocate_seats <- function(votes, electorates) {
   total_seats <- 120
 
   # exclude parties that don't make the threshold
-  prop <- votes / sum(votes);
-  exclude <- prop < 0.05 & !electorates
-  prop[exclude] <- 0;
-  # renormalize to 1
-  prop <- prop / sum(prop)
- 
+  exclude <- votes / sum(votes) < 0.05 & !electorates
+  votes[exclude] <- 0;
+
   # figure out total number of votes via Sainte Laguë
   divisors <- seq(1, by=2, length.out=total_seats)
 
