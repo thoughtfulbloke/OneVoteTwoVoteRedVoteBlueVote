@@ -44,15 +44,19 @@ election_from_poll <- function(poll, num_polled, turnout = 2000000) {
   prop <- rdirichlet(1, votes_in_poll + prior)
   return(round(turnout * prop))
 }
- 
+
+#
+# allocate_seats(votes, electorates)
+#
+# Allocates seats in an MMP parliament using the Sainte Laguë
+# system as employed in New Zealand.
+#
+# votes        the number of votes in the election per-party.
+# electorates  the number of electorates won per-party.
+#
 allocate_seats <- function(votes, electorates) {
- 
-  # uses Sainte Laguë to allocate seats in an election, assuming
-  # that each party gets at least electorates
   total_seats <- 120
- 
-  # now determine seats, given 125 available...
- 
+
   # exclude parties that don't make the threshold
   prop <- votes / sum(votes);
   exclude <- prop < 0.05 & !electorates
@@ -62,17 +66,24 @@ allocate_seats <- function(votes, electorates) {
  
   # figure out total number of votes via Sainte Laguë
   divisors <- seq(1, by=2, length.out=total_seats)
- 
+
   r <- rep(1:length(votes), length(divisors))
   d <- expand.grid(votes, divisors)
   o <- order(-round(d[,1] / d[,2]))
- 
+
   seats <- rep(0, length(votes))
   t <- tabulate(r[o[1:total_seats]])
   seats[1:length(t)] <- t
   return(pmax(seats, electorates))
 }
- 
+
+#
+# decide_winner(seats)
+#
+# Decides the winner of an election, given the seat allocation.
+#
+# seats  the allocation of seats in parliament
+#
 decide_winner <- function(seats) {
   # now decide party allegiance, assuming NZF is king-maker
   nseats <- sum(seats[side == "n"])
