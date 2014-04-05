@@ -13,17 +13,6 @@ if (!(require(gtools))) {
 # useful things to do:
 # 1. Simulate electorates given some assumptions
  
-party <- c("Nat", "Lab", "Green", "NZF", "Cons", "Maori", "ACT", "United", "Mana", "Other")
-side <- c("n", "l", "l", "w", "n", "n", "n", "n", "l", "o")
- 
-# likely electorates
-electorates <- c(42, 22, 0, 0, 0, 3, 1, 1, 1, 0);
-
-# a poll result - should use the same number of parties as above
-colmar_brunton_party_vote <- c(.47, .31, .11, .07, .023, 0.007, 0.003, 0.001, 0.000, 0.004)
-colmar_brunton_num_polled <- 767
-poll_source_description <- "source and date of poll should go here"
-
 #
 # election_from_poll(poll, num_polled, turnout = 2000000)
 #
@@ -99,13 +88,46 @@ decide_winner <- function(seats, sides) {
   return(victory)
 }
 
+# Party setup
+party_ctl <- read.table(
+  header = TRUE,
+  row.names = "Party",
+  stringsAsFactors = FALSE,
+  fill = TRUE,
+  comment = "",
+  text = "
+
+  Party           Colour   Contrast Include  Side  Electorate
+  ACT             #FFCB05  #FFFF80    Y        n        1
+  Conservative    #00AEEF  #33CCFF    Y        n        0
+  Destiny         #FF0000  #000000
+  Green           #098137  #B3FFB3    Y        l        0
+  Labour          #FF0000  #FFBAA8    Y        l       22
+  Mana            #770808  #FF6E6E    Y        l        1
+  Maori           #EF4A42  #FFCC80    Y        n        3
+  National        #00529F  #CCDDFF    Y        n       42
+  'NZ First'      #000000  #CCCCCC    Y        w        0
+  Progressive     #9E9E9E  #DDCCDD
+  'United Future' #501557  #DD99DD    Y        n        1
+")
+party_ctl[, "Include"] <- (party_ctl[, "Include"] == "Y")
+rownames(party_ctl)[match("Maori", rownames(party_ctl))] <- "M\u0101ori"
+party <- party_ctl[party_ctl[, "Include"],]
+
+
+# perform the simulation for the Colmar Brunton poll
+
+poll_source_description   <- "source and date of poll should go here"
+colmar_brunton_party_vote <- c(.003, .023, .11, .31, 0, .007, .47, .07, .001)
+colmar_brunton_num_polled <- 767
+
 many_elections <- 1000
 outcomes <- rep("", many_elections)
 for (i in 1:many_elections)
 {
   votes <- election_from_poll(colmar_brunton_party_vote, colmar_brunton_num_polled)
-  seats <- allocate_seats(votes, electorates)
-  outcomes[i] <- decide_winner(seats, side)
+  seats <- allocate_seats(votes, party$Electorate)
+  outcomes[i] <- decide_winner(seats, party$Side)
 }
 print("Results for many elections")
 print(prop.table(table(outcomes)))
