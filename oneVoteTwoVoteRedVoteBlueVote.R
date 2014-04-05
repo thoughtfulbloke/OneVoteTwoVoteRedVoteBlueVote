@@ -22,6 +22,7 @@ electorates <- c(1, 1, 0, 0, 0, 1, 1, 1, 0, 0);
 # a poll result - should use the same number of parties as above
 colmar_brunton_party_vote <- c(.47, .31, .11, .07, .023, 0.007, 0.003, 0.001, 0.000, 0.004)
 colmar_brunton_num_polled <- 767
+poll_source_description <- "source and date of poll should go here"
 
 #
 # election_from_poll(poll, num_polled)
@@ -107,3 +108,28 @@ for (i in 1:many_elections)
 }
 print("Results for many elections")
 print(prop.table(table(outcomes)))
+
+#This is a fairly round about way of getting outcomes to produce a standard graph
+
+showAGraph <- function(chances, details) {
+  merge_id <- c("hung", "labour_led", "national_led", "nzf_decides")
+  axis_text <- c("Hung Parliament", "Labour led\nw/o NZF", "national led\nw/o NZF", "Up to NZF")
+  colourscheme <- c("#FF00FFFF","#FF0000FF","#0000FFFF","#000000FF")
+  all_outcomes <- data.frame(merge_id,axis_text, colourscheme)
+  poll_outcomes <- data.frame(chances)
+  graphdata <- merge(all_outcomes, poll_outcomes, by.x="merge_id", by.y="outcomes", all.x=TRUE)
+  print(str(graphdata))
+  graphdata$Freq <- graphdata$Freq * 100
+  graphdata$Freq[is.na(graphdata$Freq)] <- 0
+  barplot(graphdata$Freq, names.arg=graphdata$axis_text, main="If the poll is accurate,\nthe election would be", cex.names=0.6, col= as.character(graphdata$colourscheme), ylab="Results Percentage", sub=details)
+}
+
+makePAsizedGraph <- function(chances, details) {
+  png(filename = paste("election_estimate_", Sys.time(),".png",sep=""), width = 420, height = 315)
+  showAGraph(chances, details)
+  dev.off()
+}
+
+showAGraph(prop.table(table(outcomes)),poll_source_description)
+#makePAsizedGraph(prop.table(table(outcomes)),poll_source_description)
+#uncomment the above line to have it save convenient PA sized graphs in the current working directory.
