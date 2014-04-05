@@ -81,13 +81,14 @@ allocate_seats <- function(votes, electorates) {
 # Decides the winner of an election, given the seat allocation.
 #
 # seats  the allocation of seats in parliament
+# sides  which side each party is likely to go with (n, l, w)
 #
-decide_winner <- function(seats) {
+decide_winner <- function(seats, sides) {
   # now decide party allegiance, assuming NZF is king-maker
-  nseats <- sum(seats[side == "n"])
-  lseats <- sum(seats[side == "l"])
-  wseats <- sum(seats[side == "w"])
- 
+  nseats <- sum(seats[sides == "n"])
+  lseats <- sum(seats[sides == "l"])
+  wseats <- sum(seats[sides == "w"])
+
   if (nseats > (lseats + wseats))  {
     victory <- "national_led"
   } else if (lseats > (nseats + wseats))  {
@@ -104,7 +105,7 @@ for (i in 1:many_elections)
 {
   votes <- election_from_poll(colmar_brunton_party_vote, colmar_brunton_num_polled)
   seats <- allocate_seats(votes, electorates)
-  outcomes[i] <- decide_winner(seats)
+  outcomes[i] <- decide_winner(seats, side)
 }
 print("Results for many elections")
 print(prop.table(table(outcomes)))
