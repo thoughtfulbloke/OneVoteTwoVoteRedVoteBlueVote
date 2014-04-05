@@ -36,6 +36,46 @@ election_from_poll <- function(poll, num_polled, turnout = 2000000) {
 }
 
 #
+# election_from_poll_of_polls(proportions, confidence, turnout = 2000000)
+#
+# simulates an election given poll of polls results.
+#
+# proprtions  the proportions for each party.
+# confidence  the number of respondents on the polls (excluding "don't know")
+# turnout     the total number of votes to simulate in the election, defaults to 2000000.
+#
+election_from_poll_of_polls <- function(proportions, confidence, turnout = 2000000) {
+
+  # We assume the confidence intervals given are normal and symmetric.
+  # The proportions no doubt add to 1, so are not independent. We get around
+  # this by sampling from the smaller parties first, and then setting the
+  # large party to one minus the total. This gets rid of the problem with
+  # proportions adding to 1, and also gets dependence between the largest
+  # party and the rest. It doesn't take into account dependence between
+  # smaller parties.
+
+  # normalize the proportion results
+  s <- sum(proportions)
+
+  proportions <- proportions / s
+
+  sd <- confidence / 1.96 / s # assumes 95% confidence intervals
+
+  o  <- order(proportions)
+  o_small <- o[-length(o)]
+
+  p <- rep(0, length(proportions))
+  p[o_small] <- rnorm(length(o_small), proportions[o_small], sd[o_small])
+
+  # TODO: ensure that p is non-negative...
+
+  # largest party is 1-sum of others
+  p[o[length(o)]] <- 1 - sum(p)
+
+  return(round(turnout * p))
+}
+
+#
 # allocate_seats(votes, electorates)
 #
 # Allocates seats in an MMP parliament using the Sainte Laguë
@@ -225,3 +265,23 @@ makePAsizedGraph <- function(chances, details) {
 showAGraph(prop.table(table(outcomes)),poll_source_description)
 #makePAsizedGraph(prop.table(table(outcomes)),poll_source_description)
 #uncomment the above line to have it save convenient PA sized graphs in the current working directory.
+
+# simulation from poll of polls. From the 'final' variable in Peter Green's script
+
+party_votes <- c(0.6, 3.0, 10.7, 29.9, 0.9, 1.2, 44.1, 7.9, 0.6)
+party_cis   <- c(0.3, 0.4,  1.3,  1.8, 0.2, 0.5,  2.0, 0.9, 0.1)
+
+many_elections <- 1000
+outcomes <- rep("", many_elections)
+seats <- matrix(0, many_elections, nrow(party))
+for (i in 1:many_elections)
+{
+  votes <- election_from_poll_of_polls(party_votes, party_cis)
+  seats[i,] <- allocate_seats(votes, party$Electorate)
+  outcomes[i] <- decide_winner(seats[i,], party$Side)
+}
+print("Results for many elections")
+print(prop.table(table(outcomes)))
+
+plot_seats(seats, party)
+plot_scenarios(seats, party)
