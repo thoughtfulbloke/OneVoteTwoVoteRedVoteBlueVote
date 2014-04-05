@@ -18,55 +18,69 @@ side <- c("n", "l", "l", "w", "n", "n", "n", "n", "l", "o")
  
 # likely electorates
 electorates <- c(1, 1, 0, 0, 0, 1, 1, 1, 0, 0);
- 
-simulate_election <- function() {
-  # we want to estimate the vector P of probabilities within a bayesian framework
-  # based on one (or more) polls, and then generate the posterior distribution for
-  # P and use this to forward-simulate for potential outcomes
- 
-  # Given P, the poll is multinomial(size, P)
-  # Thus, if we put a dirichlet prior on P, the posterior is also dirichlet
-  # with parameter P + poll_results
- 
-  poll <- c(.47, .31, .11, .07, .023, 0.007, 0.003, 0.001, 0.000, 0.004)
-  num_people <- round(poll * 767) # the best we can do as we don't know the weighting
-  prior <- rep(1, length(num_people))
- 
-  # number of votes in the simulated election
-  total_votes <- 2000000
- 
-  prop <- rdirichlet(1, num_people + prior)
-  return(round(total_votes * prop))
+
+# a poll result - should use the same number of parties as above
+colmar_brunton_party_vote <- c(.47, .31, .11, .07, .023, 0.007, 0.003, 0.001, 0.000, 0.004)
+colmar_brunton_num_polled <- 767
+
+#
+# election_from_poll(poll, num_polled)
+#
+# simulates an election given a single poll.
+#
+# poll        the proportions for each party.
+# num_polled  the number of respondents on the polls (excluding "don't know")
+# turnout     the total number of votes to simulate in the election, defaults to 2000000.
+#
+election_from_poll <- function(poll, num_polled, turnout = 2000000) {
+
+  # if P is the true proportions, then the poll is multinomial(num_polled, P)
+  # if we assume a Dirichlet(alpha) prior, the posterior is also dirichlet
+  # due to conjugacy, with paramater alpha + votes_in_poll.
+
+  votes_in_poll <- round(poll * num_polled) # the best we can do as we don't know the weighting
+  prior <- rep(1, length(votes_in_poll))    # equivalent to adding a vote for each party
+
+  prop <- rdirichlet(1, votes_in_poll + prior)
+  return(round(turnout * prop))
 }
- 
+
+#
+# allocate_seats(votes, electorates)
+#
+# Allocates seats in an MMP parliament using the Sainte Laguë
+# system as employed in New Zealand.
+#
+# votes        the number of votes in the election per-party.
+# electorates  the number of electorates won per-party.
+#
 allocate_seats <- function(votes, electorates) {
- 
-  # uses Sainte Laguë to allocate seats in an election, assuming
-  # that each party gets at least electorates
   total_seats <- 120
- 
-  # now determine seats, given 125 available...
- 
+
   # exclude parties that don't make the threshold
-  prop <- votes / sum(votes);
-  exclude <- prop < 0.05 & !electorates
-  prop[exclude] <- 0;
-  # renormalize to 1
-  prop <- prop / sum(prop)
- 
+  exclude <- votes / sum(votes) < 0.05 & !electorates
+  votes[exclude] <- 0;
+
   # figure out total number of votes via Sainte Laguë
   divisors <- seq(1, by=2, length.out=total_seats)
- 
+
   r <- rep(1:length(votes), length(divisors))
   d <- expand.grid(votes, divisors)
   o <- order(-round(d[,1] / d[,2]))
- 
+
   seats <- rep(0, length(votes))
   t <- tabulate(r[o[1:total_seats]])
   seats[1:length(t)] <- t
   return(pmax(seats, electorates))
 }
- 
+
+#
+# decide_winner(seats)
+#
+# Decides the winner of an election, given the seat allocation.
+#
+# seats  the allocation of seats in parliament
+#
 decide_winner <- function(seats) {
   # now decide party allegiance, assuming NZF is king-maker
   nseats <- sum(seats[side == "n"])
@@ -82,16 +96,14 @@ decide_winner <- function(seats) {
   } else { victory <- "nzf_decides"}
   return(victory)
 }
- 
-elect <- function(support) {
-  votes <- simulate_election()
-  seats <- allocate_seats(votes, electorates)
-  return(decide_winner(seats))
-}
- 
+
 many_elections <- 1000
 outcomes <- rep("", many_elections)
 for (i in 1:many_elections)
-  outcomes[i] <- elect()
+{
+  votes <- election_from_poll(colmar_brunton_party_vote, colmar_brunton_num_polled)
+  seats <- allocate_seats(votes, electorates)
+  outcomes[i] <- decide_winner(seats)
+}
 print("Results for many elections")
 print(prop.table(table(outcomes)))
