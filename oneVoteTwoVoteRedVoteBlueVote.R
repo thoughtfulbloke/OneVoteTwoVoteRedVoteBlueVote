@@ -283,5 +283,7 @@ for (i in 1:many_elections)
 print("Results for many elections")
 print(prop.table(table(outcomes)))
 
-plot_seats(seats, party)
-plot_scenarios(seats, party)
+#plot_seats(seats, party)
+#plot_scenarios(seats, party)
+#uncomment the above lines to have it save graphs in the current working directory.
+
