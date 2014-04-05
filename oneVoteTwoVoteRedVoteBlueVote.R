@@ -88,6 +88,75 @@ decide_winner <- function(seats, sides) {
   return(victory)
 }
 
+#
+# plot_seats(seats, party)
+#
+# Plots the distribution of seats for each party
+#
+# seats  the simulated distribution of seats
+# party  the information on each party
+#
+plot_seats <- function(seats, party) {
+  png("seats.png", width=600, height=800)
+  par(mfrow = c(nrow(party), 1), mai=rep(0.125,4), omi=rep(0.25,4))
+  max_seats <- max(seats)
+  o         <- order(-colMeans(seats))
+  for (i in o) {
+    h <- hist(seats[,i], col=rep(party$Contrast[i], length(t)), main="", border=NA, xlim=c(0,max_seats), breaks=-1:max_seats+0.5, axes=F)
+    lab <- which.max(h$counts)-1
+    off <- as.numeric(lab < max_seats/2)
+    lab <- lab + (off-0.5)*2
+    text(lab, max(h$counts)*0.9, rownames(party)[i], adj=1-off, col=party$Colour[i], cex=1.2)
+    axis(1, at=c(-10, max_seats+10), labels=rep("" ,2))
+    for (j in seq(0,max_seats,by=5))
+      mtext(j, at=j, side=1, line=0, cex=0.7)
+  }
+  dev.off()
+}
+
+#
+# plot_scenarios(seats, sides)
+#
+# Plots the scenarios of governing, given the distribution of seats
+# and the sides of each party. Plots left, right, left+middle, right+middle.
+#
+# seats  the distribution of seats
+# party  the information on each party
+#
+plot_scenarios <- function(seats, party)
+{
+  png("scenarios.png", width=600, height=400)
+  par(mfrow = c(4, 1), mai=rep(0.125,4), omi=rep(0.25,4))
+
+  r  <- rowSums(seats[,party$Side=="n"]) - rowSums(seats[,party$Side!="n"])
+  l  <- rowSums(seats[,party$Side=="l"]) - rowSums(seats[,party$Side!="l"])
+  rw <- rowSums(seats[,party$Side=="n" | party$Side=="w"]) - rowSums(seats[,party$Side!="n" & party$Side!="w"])
+  lw <- rowSums(seats[,party$Side=="l" | party$Side=="w"]) - rowSums(seats[,party$Side!="l" & party$Side!="w"])
+
+  scen   <- cbind(l, r, lw, rw)
+  col    <- rep(c("#FF0000", "#00529F"), 2)
+  con    <- rep(c("#FFBAA8", "#CCDDFF"), 2)
+  labels <- c("Left alone", "Right alone", "Left + NZFirst", "Right + NZFirst")
+
+  xlim <- range(scen)
+  xlab <- seq(-60,60,by=5)
+  xlab <- xlab[xlab >= xlim[1] & xlab <= xlim[2]]
+  for (i in 1:ncol(scen))
+  {
+    h <- hist(scen[,i], col=con[i], main="", border=NA, xlim=xlim, breaks=(xlim[1]-1):xlim[2]+0.5, axes=F, yaxs="i", xaxs="i")
+    lab <- h$mids[which.max(h$counts)]
+    off <- as.numeric(lab < 0)
+    lab <- lab + (off-0.5)*6
+    text(xlim[2], max(h$counts), paste(round(sum(scen[,i] > 0) / many_elections * 100),"%",sep=""), cex=3, adj=c(1,1), col=col[i])
+    text(lab, max(h$counts)*0.9, labels[i], adj=1-off, col=col[i], cex=1.2)
+    axis(1, at=c(-60,60), labels=rep("" ,2), yaxs="i", cex=0.7)
+    for (j in xlab)
+      mtext(j+60, at=j, side=1, line=0, cex=0.7)
+    abline(v=0.5)
+  }
+  dev.off()
+}
+
 # Party setup
 party_ctl <- read.table(
   header = TRUE,
