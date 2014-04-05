@@ -17,7 +17,7 @@ party <- c("Nat", "Lab", "Green", "NZF", "Cons", "Maori", "ACT", "United", "Mana
 side <- c("n", "l", "l", "w", "n", "n", "n", "n", "l", "o")
  
 # likely electorates
-electorates <- c(1, 1, 0, 0, 0, 1, 1, 1, 0, 0);
+electorates <- c(42, 22, 0, 0, 0, 3, 1, 1, 1, 0);
 
 # a poll result - should use the same number of parties as above
 colmar_brunton_party_vote <- c(.47, .31, .11, .07, .023, 0.007, 0.003, 0.001, 0.000, 0.004)
