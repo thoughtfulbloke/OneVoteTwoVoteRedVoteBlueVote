@@ -25,7 +25,7 @@ colmar_brunton_num_polled <- 767
 poll_source_description <- "source and date of poll should go here"
 
 #
-# election_from_poll(poll, num_polled)
+# election_from_poll(poll, num_polled, turnout = 2000000)
 #
 # simulates an election given a single poll.
 #
